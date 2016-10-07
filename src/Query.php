@@ -62,6 +62,51 @@ class Query {
     }
     
     /**
+     * @brief a stub you can implement to run before running an update
+     * @method beforeUpdate
+     * @public
+     * @return void
+     */
+    protected  function beforeUpdate() {}
+    
+    /**
+     * @brief a stub you can implement to run after running an update
+     * @method beforeUpdate
+     * @public
+     * @return void
+     */
+    protected  function afterUpdate() {}
+    
+    /**
+     * @brief a stub you can implement to run before running an insert
+     * @public
+     * @return void
+     */
+    protected function beforeInsert() {}
+    
+    /**
+     * @brief a stub you can implement to run after running an insert
+     * @public
+     * @return void
+     */
+    protected function afterInsert() {}
+    
+    /**
+     * @brief a stub you can implement to run before running an delete
+     * @public
+     * @return void
+     */
+    protected function beforeDelete() {}
+    
+    /**
+     * @brief a stub you can implement to run after running an delete
+     * @public
+     * @return void
+     */
+    protected function afterDelete() {}
+    
+    
+    /**
      * @brief limit the result set by the given $by parameter, optionally, you 
      * can specify the page offset
      * @method limit
@@ -93,14 +138,15 @@ class Query {
         // put the query building in process
         $query = Queries::get($this->_query_id)->get();
         // get the aproriate driver for retrieving our query data
-        $driver = \Bookworm\Driver::getConnection($this->getConnection());
+        $driver = \Bookworm\Pool::getConnection($this->getConnection());
         // capture the results
         try {
             $results = $driver
                 ->query( $query )
                 ->bindAssocArray( Queries::get($this->_query_id)->getBindings());
         } catch (Exception $ex) {
-            $this->_errors[0] = "We could not bind the parameters to the query. ";
+            $this->_errors[] = $ex->getMessage();
+            $this->_errors[] = "We could not bind the parameters to the query. ";
             return null;
         }
         
@@ -117,7 +163,6 @@ class Query {
                 return null;
             }
             $data = $this->mergeAttributes($data);
-            // $data->posthook();
             return $data;
         }
     }
@@ -262,12 +307,12 @@ class Query {
      * @param {string} $class
      */
     public static function setFields($class) {
-        $object = new $class($class);
+        $object = new $class(true, false);
         $query =  \Bookworm\Lexicon::key('select') . ' * ';
         $query .= \Bookworm\Lexicon::key('from') . '  ' . $object->_table->getTablename() . ' ';
         $query .= \Bookworm\Lexicon::key('limit') . ' 0';
 
-        $stmt = \Bookworm\Driver::getConnection( $object->getConnection())->query($query)->getStatement();
+        $stmt = \Bookworm\Pool::getConnection( $object->getConnection())->query($query)->getStatement();
 
         $stmt->execute();
         $colcount = $stmt->columnCount();

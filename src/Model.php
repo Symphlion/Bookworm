@@ -86,7 +86,7 @@ class Model extends Relation {
 
         if ($query) {
             try {
-                $driver = \Bookworm\Driver::getConnection($this->getConnection());
+                $driver = \Bookworm\Pool::getConnection($this->getConnection());
                 
                 $result = $driver
                         ->query($query)
