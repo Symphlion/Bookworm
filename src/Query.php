@@ -107,7 +107,7 @@ class Query {
         if ( ( $limit && $limit > 1) or $limit === null ) {
             $collection = new \Bookworm\Collection();
             $data = $results->all(\PDO::FETCH_ASSOC);
-            $collection->addByArray($data, $this->_table_obj->getClassname());
+            $collection->addByArray($data, $this->_table->getClassname());
             $collection->posthook();
             return $collection;
         }
@@ -133,7 +133,7 @@ class Query {
         
         Queries::get($this->_query_id)
             ->select('*')
-            ->where($this->_table_obj->getPrimaryField(), '=', $id)
+            ->where($this->_table->getPrimaryField(), '=', $id)
             ->limit(1);
         return $this->_get();
     }
@@ -264,7 +264,7 @@ class Query {
     public static function setFields($class) {
         $object = new $class($class);
         $query =  \Bookworm\Lexicon::key('select') . ' * ';
-        $query .= \Bookworm\Lexicon::key('from') . '  ' . $object->_table_obj->getTablename() . ' ';
+        $query .= \Bookworm\Lexicon::key('from') . '  ' . $object->_table->getTablename() . ' ';
         $query .= \Bookworm\Lexicon::key('limit') . ' 0';
 
         $stmt = \Bookworm\Driver::getConnection( $object->getConnection())->query($query)->getStatement();

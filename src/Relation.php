@@ -16,11 +16,10 @@ class Relation extends Query {
      * @method hasOne
      * @public
      * @param string $model
-     * @param string $foreign_id optional
-     * @param string $table optional
+     * @param string $foreign_key   optional
      * @return \Bookworm\Model
      */
-    public function hasOne($model, $foreign_key = null, $own_key = null) {
+    public function hasOne($model, $foreign_key = null) {
         
         $relation = $this->createRelation($model);
         
@@ -99,7 +98,7 @@ class Relation extends Query {
         {
             try 
             {
-                $relation = new $model(false);
+                $relation = new $model(false, false);
                 return $relation;    
             } 
             catch (\Exception $e) 

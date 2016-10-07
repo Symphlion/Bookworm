@@ -29,13 +29,14 @@ class Queries {
      * @method get
      * @static
      * @public
-     * @param string $id
+     * @param string    $id
+     * @param bool      $copy_builder
      * @return \Bookworm\Builder
      */
-    public static function get($id){
+    public static function get($id, $copy_builder = true){
         if( !self::$queries[$id]){
             $id = \Bookworm\Utilities::inthash(4);
-            self::$queries[ $id ] = new \Bookworm\Builder( $id );
+            self::$queries[ $id ] = new \Bookworm\Builder( $id , $copy_builder);
         }
         return self::$queries[ $id ];
     }

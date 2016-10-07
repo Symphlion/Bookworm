@@ -14,7 +14,7 @@ class Model extends Relation {
     /**
      * @var \Bookworm\Table
      */
-    protected $_table_obj = null;
+    protected $_table = null;
 
     /**
      * @var array
@@ -37,28 +37,28 @@ class Model extends Relation {
      */
     protected $_id = null;
 
-    public function __construct($is_new_object = true) {
+    public function __construct($is_new_object = true, $copy_builder = true) {
         parent::__construct();
         $classname = get_called_class();
 
         if ($this->table !== null) {
-            $this->_table_obj = new \Bookworm\Table($this->table);
+            $this->_table = new \Bookworm\Table($this->table);
         } else {
-            $this->_table_obj = new \Bookworm\Table($classname);
-            $this->table = $this->_table_obj->getTableName();
+            $this->_table = new \Bookworm\Table($classname);
+            $this->table = $this->_table->getTableName();
         }
 
         if ($this->primaryfield !== null) {
-            $this->_table_obj->setPrimaryField($this->primaryfield);
+            $this->_table->setPrimaryField($this->primaryfield);
         }
 
         // if this was a new object, we`re going to try and do an insert.
         if ($is_new_object) {
             $this->_is_new_object = $is_new_object;
-            Queries::get($this->_query_id)->insert($this->_table_obj->getTablename());
+            Queries::get($this->_query_id, $copy_builder)->insert($this->_table->getTablename());
         } else {
             // the initial select query as we`re most likely going to retrieve data
-            Queries::get($this->_query_id)->select('*')->from($this->_table_obj->getTableName());
+            Queries::get($this->_query_id, $copy_builder)->select('*')->from($this->_table->getTableName());
         }
     }
 
@@ -151,7 +151,7 @@ class Model extends Relation {
      */
     protected function createInsertQuery() {
         $builder = Queries::get($this->_query_id)
-                ->insert($this->_table_obj->getTableName());
+                ->insert($this->_table->getTableName());
 
 
         $set = [];
@@ -161,7 +161,7 @@ class Model extends Relation {
             $skip = false;
             // check if the field is our primary key
             if (\Bookworm\Utilities::hasFlag($field['flags'], 'primary_key')) {
-                $this->_table_obj->setPrimaryField($field['name']);
+                $this->_table->setPrimaryField($field['name']);
                 continue;
             }
             // check if the field requires a value to be set
@@ -201,8 +201,8 @@ class Model extends Relation {
 
         $builder = Queries::get($this->_query_id)
                 ->reset()
-                ->update($this->_table_obj->getTableName())
-                ->where($this->_table_obj->getPrimaryField(), '=', $this->getId());
+                ->update($this->_table->getTableName())
+                ->where($this->_table->getPrimaryField(), '=', $this->getId());
 
         foreach ($this->getFields() as $field) {
 
@@ -285,6 +285,10 @@ class Model extends Relation {
         return $this->_id;
     }
 
+    public function getTable(){
+        return $this->_table;
+    }
+    
     /**
      * @brief set up the connection for this model by passing it as a string
      * to the function.
@@ -360,8 +364,8 @@ class Model extends Relation {
         if (!$this->_has_merge) {
             $this->_has_merge = true;
             if (is_array($data)) {
-                if (isset($data[$this->_table_obj->getPrimaryField()])) {
-                    $this->_id = $data[$this->_table_obj->getPrimaryField()];
+                if (isset($data[$this->_table->getPrimaryField()])) {
+                    $this->_id = $data[$this->_table->getPrimaryField()];
                 } else {
                     // naively assume the ID will be "id" 
                     if (isset($data['id'])) {
@@ -386,8 +390,8 @@ class Model extends Relation {
         if (!$this->_has_merge) {
             $this->_has_merge = true;
             if (is_object($obj)) {
-                if ($obj->{$this->_table_obj->getPrimaryField()}) {
-                    $this->_id = $obj->{$this->_table_obj->getPrimaryField()};
+                if ($obj->{$this->_table->getPrimaryField()}) {
+                    $this->_id = $obj->{$this->_table->getPrimaryField()};
                 } else {
                     // naively assume the ID will be "id" 
                     if ($obj->id) {
