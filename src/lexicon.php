@@ -8,6 +8,7 @@ namespace Bookworm;
  * be good to go. If something else requires changing, overwrite the Builder class
  * and extend it to your needs.
  * @class Lexicon
+ * @since 1.0
  */
 class Lexicon {
     
@@ -90,9 +91,9 @@ class Lexicon {
      * @method key
      * @public
      * @static
-     * @param string $operand
-     * @param string $type
-     * @return string|false
+     * @param string $key
+     * @param string $group
+     * @return string|null
      */
     public static function validate( $key, $group ){
         if( !in_array($group, ['directions', 'logical', 'equality', 'like'])){
@@ -103,26 +104,4 @@ class Lexicon {
         }
         return strtoupper($key);
     }
-    
-    /**
-     * The fields to select or where the action is on.
-     * @property $_searches
-     * @protected
-     * @type {array}
-     */
-    protected $_searches = ['*'];
-
-    /**
-     * @property $_attr_values
-     * @protected
-     * @type array
-     */
-    protected $_attr_values = [];
-
-    /**
-     * @property $_binds
-     * @protected
-     * @type array
-     */
-    protected $_binds = [];
 }
