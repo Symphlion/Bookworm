@@ -37,7 +37,7 @@ class Builder {
      * @var array
      */
     protected $clauses = [];
-    
+
     /**
      * @property The template for the clauses array which we can use to reset the builder
      * instance. 
@@ -72,7 +72,7 @@ class Builder {
         'having' => [],
         'orhaving' => []
     ];
-    
+
     /**
      * @property Capture some rudimentary stats to check if we need to execute them.
      * @var array
@@ -84,16 +84,16 @@ class Builder {
         'like' => 0,
         'having' => 0
     ];
-    
+
     /**
      * @property The unique ID for the current \Bookworm\Builder instance.
      * @var string
      */
     protected $query_id = null;
 
-    /*     * *************************************************************************
+    /*
      * The instantion of the object and query ID assignment and retrieval
-     * ************************************************************************ */
+     */
 
     /**
      * @brief instantiates a new \Bookworm\Builder instance. If an ID is given,
@@ -108,8 +108,8 @@ class Builder {
         if ($id !== null) {
             $this->query_id = $id;
         }
-        
-        if( $copy ){
+
+        if ($copy) {
             $this->clauses = \Bookworm\Builder::$clauses_template;
         }
     }
@@ -225,20 +225,12 @@ class Builder {
      * @method delete
      * @public
      * @param string $table
-     * @param [, string] $table - if you add more then 1 table, it will recursively
-     * call this method to add all the tables in the function arguments array. 
      * @return \Bookworm\Builder
      */
     public function delete($table) {
         if (!$this->initialized) {
             $this->initialized = true;
-            if (func_num_args() > 1) {
-                foreach (func_get_args() as $table) {
-                    $this->delete($table);
-                }
-            } else {
-                $this->clauses['delete'] = $table;
-            }
+            $this->clauses['delete'] = $table;
         }
         return $this;
     }
@@ -274,19 +266,19 @@ class Builder {
      * @param array $field
      * @return \Bookworm\Builder
      */
-    public function set($key, $value = null ) {
+    public function set($key, $value = null) {
         if (is_array($key)) {
             foreach ($key as $k => $v) {
                 $this->set($k, $v);
             }
         } else {
-            if( is_string($key) && $value !== null ){
+            if (is_string($key) && $value !== null) {
                 $this->clauses['set'][] = $this->wrap($key) . ' = ' . $this->createBinding($value);
             }
         }
         return $this;
     }
-    
+
     /**
      * @brief add a array of fields you want to set up in your INSERT clause. 
      * @method fieldnames
@@ -294,24 +286,24 @@ class Builder {
      * @param array $fields
      * @return \Bookworm\Builder
      */
-    public function fieldnames ($fields) {
+    public function fieldnames($fields) {
         $this->clauses['fieldnames'] = array_unique(
-            array_merge($this->clauses['fieldnames'], $fields)
+                array_merge($this->clauses['fieldnames'], $fields)
         );
-        
+
         return $this;
     }
-    
+
     /**
      * @brief add an array of values for your INSERT query. 
      * @method values
      * @public
      * @param array $fields
      */
-    public function values ($fields) {
+    public function values($fields) {
         if (is_array($fields)) {
             $binds = [];
-            foreach($fields as $key => $value ){
+            foreach ($fields as $value) {
                 $binds[] = $this->createBinding($value);
             }
             $this->clauses['values'][] = ' (' . implode(', ', $binds) . ') ';
@@ -319,7 +311,7 @@ class Builder {
         return $this;
     }
 
-    /** 
+    /**
      * Joining tables, either inner join, left/right join or cross join
      */
 
@@ -336,7 +328,9 @@ class Builder {
      */
     public function join($table, $field, $from) {
         $this->statistics['joins'] ++;
-        $join = \Bookworm\Lexicon::key('innerjoin') . ' ' . $this->splitwrap($table, ' ') . ' ' . \Bookworm\Lexicon::key('on') . ' ' . $this->splitwrap($from) . ' = ' . $this->splitwrap($field);
+        $join = \Bookworm\Lexicon::key('innerjoin') . ' ' . $this->splitwrap($table, ' ')
+                . ' ' . \Bookworm\Lexicon::key('on') . ' ' . $this->splitwrap($from)
+                . ' = ' . $this->splitwrap($field);
         $this->clauses['innerjoin'][] = $join;
         return $this;
     }
@@ -354,7 +348,9 @@ class Builder {
      */
     public function leftjoin($table, $field, $from) {
         $this->statistics['joins'] ++;
-        $join = \Bookworm\Lexicon::key('leftjoin') . ' ' . $this->wrap($table) . ' ' . \Bookworm\Lexicon::key('on') . ' ' . $this->wrap($field) . ' = ' . $this->wrap($from);
+        $join = \Bookworm\Lexicon::key('leftjoin') . ' ' . $this->wrap($table)
+                . ' ' . \Bookworm\Lexicon::key('on') . ' ' . $this->wrap($field)
+                . ' = ' . $this->wrap($from);
         $this->clauses['leftjoin'][] = $join;
         return $this;
     }
@@ -372,7 +368,9 @@ class Builder {
      */
     public function rightjoin($table, $field, $from) {
         $this->statistics['joins'] ++;
-        $join = \Bookworm\Lexicon::key('rightjoin') . ' ' . $this->wrap($table) . ' ' . \Bookworm\Lexicon::key('on') . ' ' . $this->wrap($field) . ' = ' . $this->wrap($from);
+        $join = \Bookworm\Lexicon::key('rightjoin') . ' ' . $this->wrap($table)
+                . ' ' . \Bookworm\Lexicon::key('on') . ' ' . $this->wrap($field)
+                . ' = ' . $this->wrap($from);
         $this->clauses['rightjoin'][] = $join;
         return $this;
     }
@@ -394,15 +392,17 @@ class Builder {
     public function where($field, $equals, $value, $return = false) {
         $this->statistics['where'] ++;
         if ($this->isWhereArray($field) && $this->isWhereArray($value)) {
-            $logical = \Bookworm\Lexicon::validate($equals, 'logical'); // (in_array($equals, \Bookworm\Lexicon::$allowed['logical'])) ? $equals : \Bookworm\Lexicon::$allowed['logical']['default'];
+            $logical = \Bookworm\Lexicon::validate($equals, 'logical');
             $first_where = $this->extractWhereClause($field);
             $second_where = $this->extractWhereClause($value);
-            // $first_where = $this->where($field[0], $field[1], $field[2], true);
-            // $second_where = $this->where($value[0], $value[1], $value[2], true);
-            $this->clauses['where'][] = '(' . $first_where . ' ' . $logical . ' ' . $second_where . ')';
+            $this->clauses['where'][] = '(' . $first_where . ' ' . $logical
+                    . ' ' . $second_where . ')';
         } else {
+
             $equals = (in_array($equals, \Bookworm\Lexicon::$allowed['equality'])) ? $equals : \Bookworm\Lexicon::$allowed['equality']['default'];
-            $where_clause = $this->splitwrap($field) . ' ' . $equals . ' ' . $this->createBinding($value);
+
+            $where_clause = $this->splitwrap($field) . ' ' . $equals . ' '
+                    . $this->createBinding($value);
 
             if ($return) {
                 return $where_clause;
@@ -425,11 +425,17 @@ class Builder {
     public function orWhere($field, $equals, $value, $return = false) {
         $this->statistics['where'] ++;
         if ($this->isWhereArray($field) && $this->isWhereArray($value)) {
+
             $logical = (in_array($equals, \Bookworm\Lexicon::$allowed['logical'])) ? $equals : \Bookworm\Lexicon::$allowed['logical']['default'];
-            $this->clauses['orwhere'][] = '(' . $this->where($field[0], $field[1], $field[2], true) . ' ' . $logical . ' ' . $this->where($value[0], $value[1], $value[2], true) . ')';
+
+            $this->clauses['orwhere'][] = '(' . $this->where($field[0], $field[1], $field[2], true)
+                    . ' ' . $logical . ' '
+                    . $this->where($value[0], $value[1], $value[2], true) . ')';
         } else {
             $equals = (in_array($equals, \Bookworm\Lexicon::$allowed['equality'])) ? $equals : \Bookworm\Lexicon::$allowed['equality']['default'];
-            $where_clause = $this->wrap($field) . ' ' . $equals . ' ' . $this->createBinding($value);
+
+            $where_clause = $this->wrap($field) . ' ' . $equals
+                    . ' ' . $this->createBinding($value);
             if ($return) {
                 return $where_clause;
             }
@@ -448,7 +454,9 @@ class Builder {
      */
     public function between($field, $begin, $end, $return = false) {
         $this->statistics['between'] ++;
-        $between = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('between') . ' ' . $this->toNumber($begin) . ' ' . \Bookworm\Lexicon::key('and') . ' ' . $this->toNumber($end);
+        $between = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('between')
+                . ' ' . $this->toNumber($begin) . ' '
+                . \Bookworm\Lexicon::key('and') . ' ' . $this->toNumber($end);
         if ($return) {
             return $between;
         }
@@ -466,7 +474,9 @@ class Builder {
      */
     public function notBetween($field, $begin, $end, $return = false) {
         $this->statistics['between'] ++;
-        $not_between = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('notbetween') . ' ' . $this->createBinding($begin) . ' ' . \Bookworm\Lexicon::key('and') . ' ' . $this->createBinding($end);
+        $not_between = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('notbetween')
+                . ' ' . $this->createBinding($begin) . ' '
+                . \Bookworm\Lexicon::key('and') . ' ' . $this->createBinding($end);
         if ($return) {
             return $not_between;
         }
@@ -484,7 +494,9 @@ class Builder {
      */
     public function orBetween($field, $begin, $end, $return = false) {
         $this->statistics['between'] ++;
-        $between = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('between') . ' ' . $this->wrap($begin) . ' ' . \Bookworm\Lexicon::key('and') . ' ' . $this->wrap($end);
+        $between = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('between')
+                . ' ' . $this->wrap($begin) . ' '
+                . \Bookworm\Lexicon::key('and') . ' ' . $this->wrap($end);
         if ($return) {
             return $between;
         }
@@ -502,7 +514,11 @@ class Builder {
      */
     public function orNotBetween($field, $begin, $end, $return = false) {
         $this->statistics['between'] ++;
-        $not_between = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('notbetween') . ' ' . $this->createBinding($begin) . ' ' . \Bookworm\Lexicon::key('and') . ' ' . $this->createBinding($end);
+        $not_between = $this->wrap($field) . ' '
+                . \Bookworm\Lexicon::key('notbetween') . ' '
+                . $this->createBinding($begin) . ' '
+                . \Bookworm\Lexicon::key('and') . ' '
+                . $this->createBinding($end);
         if ($return) {
             return $not_between;
         }
@@ -527,7 +543,8 @@ class Builder {
         }
 
         $final_argument = str_replace('a', $argument, $type);
-        $like_clause = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('like') . ' "' . $final_argument . '"';
+        $like_clause = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('like')
+                . ' "' . $final_argument . '"';
 
         if ($return) {
             return $like_clause;
@@ -554,7 +571,8 @@ class Builder {
             $type = \Bookworm\Lexicon::$allowed['like']['default'];
         }
         $final_argument = str_replace('a', $type, $argument);
-        $or_like_clause = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('like') . ' "' . $final_argument . '"';
+        $or_like_clause = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('like')
+                . ' "' . $final_argument . '"';
 
         if ($return) {
             return $or_like_clause;
@@ -581,7 +599,8 @@ class Builder {
             $type = \Bookworm\Lexicon::$allowed['like']['default'];
         }
         $final_argument = str_replace('a', $type, $argument);
-        $not_like_clause = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('notlike') . ' "' . $final_argument . '"';
+        $not_like_clause = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('notlike')
+                . ' "' . $final_argument . '"';
 
         if ($return) {
             return $not_like_clause;
@@ -608,7 +627,8 @@ class Builder {
             $type = \Bookworm\Lexicon::$allowed['like']['default'];
         }
         $final_argument = str_replace('a', $type, $argument);
-        $or_not_like_clause = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('notlike') . ' "' . $final_argument . '"';
+        $or_not_like_clause = $this->wrap($field) . ' ' . \Bookworm\Lexicon::key('notlike')
+                . ' "' . $final_argument . '"';
 
         if ($return) {
             return $or_not_like_clause;
@@ -633,7 +653,9 @@ class Builder {
         if (!in_array($equality, \Bookworm\Lexicon::$allowed['equality'])) {
             $equality = \Bookworm\Lexicon::$allowed['equality']['default'];
         }
-        $this->clauses['having'][] = \Bookworm\Lexicon::key('having') . ' ' . $this->wrap($field) . ' ' . $equality . ' ' . $this->createBinding($value);
+        $this->clauses['having'][] = \Bookworm\Lexicon::key('having') . ' '
+                . $this->wrap($field) . ' ' . $equality . ' '
+                . $this->createBinding($value);
         return $this;
     }
 
@@ -651,13 +673,15 @@ class Builder {
         if (!in_array($equality, \Bookworm\Lexicon::$allowed['equality'])) {
             $equality = \Bookworm\Lexicon::$allowed['equality']['default'];
         }
-        $this->clauses['orhaving'][] = \Bookworm\Lexicon::key('having') . ' ' . $this->wrap($field) . ' ' . $equality . ' ' . $this->createBinding($value);
+        $this->clauses['orhaving'][] = \Bookworm\Lexicon::key('having') . ' '
+                . $this->wrap($field) . ' ' . $equality . ' '
+                . $this->createBinding($value);
         return $this;
     }
 
-    /*     * *************************************************************************
+    /*
      * Grouping and / or ordering the results
-     * ************************************************************************ */
+     */
 
     /**
      * @brief group by a given field and / or add a table to specify which
@@ -721,11 +745,11 @@ class Builder {
         return $this;
     }
 
-    /*     * *************************************************************************
+    /*
      * Finally, we need some closing functionality to retrieve the query 
      * and / or the bindings etc, basically, all the get methods we can access
      * that "break" fluency.
-     * ************************************************************************ */
+     */
 
     /**
      * @brief returns the final query as a string, parameterized. If you need
@@ -766,9 +790,9 @@ class Builder {
         return null;
     }
 
-    /*     * *******************************************************************
+    /*
      * Building the query and it`s associating clauses
-     * ********************************************************************** */
+     */
 
     /**
      * @brief a helper to check what kind of query we`re performing. As it matters
@@ -803,8 +827,10 @@ class Builder {
      * @returns \Bookworm\Builder
      */
     protected function buildSelectQuery() {
-        $this->query = \Bookworm\Lexicon::key('select') . ' ' . implode(', ', $this->clauses['select']) . ' ';
-        $this->query .= \Bookworm\Lexicon::key('from') . ' ' . implode(', ', $this->clauses['from']) . ' ';
+        $this->query = \Bookworm\Lexicon::key('select') . ' '
+                . implode(', ', $this->clauses['select']) . ' '
+                . \Bookworm\Lexicon::key('from') . ' '
+                . implode(', ', $this->clauses['from']) . ' ';
 
         if ($this->statistics['joins'] > 0) {
             $this->query .= $this->buildJoinQuery();
@@ -820,15 +846,18 @@ class Builder {
         }
 
         if (count($this->clauses['groupby']) > 0) {
-            $this->query .= \Bookworm\Lexicon::key('groupby') . ' ' . implode(', ', $this->clauses['groupby']) . ' ';
+            $this->query .= \Bookworm\Lexicon::key('groupby') . ' '
+                    . implode(', ', $this->clauses['groupby']) . ' ';
         }
 
         if (count($this->clauses['orderby']) > 0) {
-            $this->query .= \Bookworm\Lexicon::key('orderby') . ' ' . implode(', ', $this->clauses['orderby']) . ' ';
+            $this->query .= \Bookworm\Lexicon::key('orderby') . ' '
+                    . implode(', ', $this->clauses['orderby']) . ' ';
         }
 
         if ($this->clauses['limit'] !== null && $this->clauses['limit'] !== '') {
-            $this->query .= \Bookworm\Lexicon::key('limit') . ' ' . $this->clauses['limit'] . '';
+            $this->query .= \Bookworm\Lexicon::key('limit') . ' '
+                    . $this->clauses['limit'] . '';
         }
 
         $this->query = trim($this->query) . ';';
@@ -842,12 +871,14 @@ class Builder {
      * @returns \Bookworm\Builder
      */
     protected function buildUpdateQuery() {
-        $this->query = \Bookworm\Lexicon::key('update') . ' ' . $this->wrap($this->clauses['update']) . ' ' . \Bookworm\Lexicon::key('set') . ' ';
-        
-        if( count($this->clauses['set']) == 0){
+        $this->query = \Bookworm\Lexicon::key('update') . ' '
+                . $this->wrap($this->clauses['update']) . ' '
+                . \Bookworm\Lexicon::key('set') . ' ';
+
+        if (count($this->clauses['set']) == 0) {
             return false;
         }
-        
+
         $this->query .= implode(', ', $this->clauses['set']) . ' ';
 
         if ($this->statistics['where'] > 0) {
@@ -861,13 +892,14 @@ class Builder {
         }
 
         if (count($this->clauses['limit']) == 1) {
-            $this->query .= \Bookworm\Lexicon::key('limit') . ' ' . $this->clauses['limit'] . '';
+            $this->query .= \Bookworm\Lexicon::key('limit') . ' '
+                    . $this->clauses['limit'] . '';
         }
 
         $this->query = trim($this->query) . ';';
         return $this->query;
     }
-    
+
     /**
      * @brief Create the query string for a `SELECT` Query.
      * @method buildSelectQuery
@@ -875,11 +907,13 @@ class Builder {
      * @returns \Bookworm\Builder
      */
     protected function buildInsertQuery() {
-        $this->query = \Bookworm\Lexicon::key('insert') . ' ' . $this->wrap($this->clauses['insert']) . ' ';
-        if( count($this->clauses['fieldnames'])){
-            $this->query .=  ' (' . implode(', ', $this->clauses['fieldnames']) . ') ';
+        $this->query = \Bookworm\Lexicon::key('insert') . ' '
+                . $this->wrap($this->clauses['insert']) . ' ';
+        if (count($this->clauses['fieldnames'])) {
+            $this->query .= ' (' . implode(', ', $this->clauses['fieldnames']) . ') ';
         }
-        $this->query .= \Bookworm\Lexicon::key('values') . ' ' . implode(', ', $this->clauses['values']) . ' ';
+        $this->query .= \Bookworm\Lexicon::key('values') . ' '
+                . implode(', ', $this->clauses['values']) . ' ';
         $this->query = trim($this->query) . ';';
         return $this->query;
     }
@@ -894,10 +928,13 @@ class Builder {
     protected function buildWhereQuery() {
         $intermediary = \Bookworm\Lexicon::key('where') . ' ';
         if (count($this->clauses['where']) > 0) {
-            $intermediary .= implode(' ' . \Bookworm\Lexicon::key('and') . ' ', $this->clauses['where']) . ' ';
+            $intermediary .= implode(' ' . \Bookworm\Lexicon::key('and')
+                            . ' ', $this->clauses['where']) . ' ';
         }
         if (count($this->clauses['orwhere']) > 0) {
-            $intermediary .= \Bookworm\Lexicon::key('or') . ' ' . implode(' ' . \Bookworm\Lexicon::key('or') . ' ', $this->clauses['orwhere']) . ' ';
+            $intermediary .= \Bookworm\Lexicon::key('or') . ' '
+                    . implode(' ' . \Bookworm\Lexicon::key('or')
+                            . ' ', $this->clauses['orwhere']) . ' ';
         }
 
         return $intermediary;
@@ -915,19 +952,23 @@ class Builder {
         $intermediary = '';
         // All the between clauses
         if (count($this->clauses['between']) > 0) {
-            $intermediary .= \Bookworm\Lexicon::key('and') . ' ' . implode(' ' . \Bookworm\Lexicon::key('and') . ' ', $this->clauses['between']) . ' ';
+            $intermediary .= \Bookworm\Lexicon::key('and') . ' ' . implode(' '
+                            . \Bookworm\Lexicon::key('and') . ' ', $this->clauses['between']) . ' ';
         }
 
         if (count($this->clauses['notbetween']) > 0) {
-            $intermediary .= \Bookworm\Lexicon::key('and') . ' ' . implode(' ' . \Bookworm\Lexicon::key('and') . ' ', $this->clauses['notbetween']) . ' ';
+            $intermediary .= \Bookworm\Lexicon::key('and') . ' ' . implode(' '
+                            . \Bookworm\Lexicon::key('and') . ' ', $this->clauses['notbetween']) . ' ';
         }
 
         if (count($this->clauses['orbetween']) > 0) {
-            $intermediary .= \Bookworm\Lexicon::key('or') . ' ' . implode(' ' . \Bookworm\Lexicon::key('or') . ' ', $this->clauses['orbetween']) . ' ';
+            $intermediary .= \Bookworm\Lexicon::key('or') . ' ' . implode(' '
+                            . \Bookworm\Lexicon::key('or') . ' ', $this->clauses['orbetween']) . ' ';
         }
 
         if (count($this->clauses['ornotbetween']) > 0) {
-            $intermediary .= \Bookworm\Lexicon::key('or') . ' ' . implode(' ' . \Bookworm\Lexicon::key('or') . ' ', $this->clauses['ornotbetween']) . ' ';
+            $intermediary .= \Bookworm\Lexicon::key('or') . ' ' . implode(' '
+                            . \Bookworm\Lexicon::key('or') . ' ', $this->clauses['ornotbetween']) . ' ';
         }
         return $intermediary;
     }
@@ -944,16 +985,20 @@ class Builder {
         $intermediary = '';
         //  All the LIKE clauses
         if (count($this->clauses['like']) > 0) {
-            $intermediary .= \Bookworm\Lexicon::key('and') . ' ' . implode(' ' . \Bookworm\Lexicon::key('and') . ' ', $this->clauses['like']) . ' ';
+            $intermediary .= \Bookworm\Lexicon::key('and') . ' ' . implode(' '
+                            . \Bookworm\Lexicon::key('and') . ' ', $this->clauses['like']) . ' ';
         }
         if (count($this->clauses['orlike']) > 0) {
-            $intermediary .= \Bookworm\Lexicon::key('or') . ' ' . implode(' ' . \Bookworm\Lexicon::key('or') . ' ', $this->clauses['orlike']) . ' ';
+            $intermediary .= \Bookworm\Lexicon::key('or') . ' ' . implode(' '
+                            . \Bookworm\Lexicon::key('or') . ' ', $this->clauses['orlike']) . ' ';
         }
         if (count($this->clauses['notlike']) > 0) {
-            $intermediary .= \Bookworm\Lexicon::key('and') . ' ' . implode(' ' . \Bookworm\Lexicon::key('and') . ' ', $this->clauses['notlike']) . ' ';
+            $intermediary .= \Bookworm\Lexicon::key('and') . ' ' . implode(' '
+                            . \Bookworm\Lexicon::key('and') . ' ', $this->clauses['notlike']) . ' ';
         }
         if (count($this->clauses['ornotlike']) > 0) {
-            $intermediary .= \Bookworm\Lexicon::key('or') . ' ' . implode(' ' . \Bookworm\Lexicon::key('or') . ' ', $this->clauses['ornotlike']) . ' ';
+            $intermediary .= \Bookworm\Lexicon::key('or') . ' ' . implode(' '
+                            . \Bookworm\Lexicon::key('or') . ' ', $this->clauses['ornotlike']) . ' ';
         }
         return $intermediary;
     }
@@ -976,9 +1021,9 @@ class Builder {
         return $intermediary;
     }
 
-    /*     * *************************************************************************
+    /*
      * Helper functions to sanitize the fields 
-     * ************************************************************************ */
+     */
 
     /**
      * @brief reset the query builder and restore all the previously filled fields
@@ -1039,11 +1084,11 @@ class Builder {
      * @return  int
      */
     protected function toNumber($value) {
-        
-        if( !is_float( $value) || is_double($value) || is_int( $value ) || !ctype_digit( $value)){
+
+        if (!is_float($value) || is_double($value) || is_int($value) || !ctype_digit($value)) {
             $value = 0;
         }
-        
+
         return intval($value);
     }
 
@@ -1070,7 +1115,7 @@ class Builder {
 
     /**
      * @brief analyse the array ( and check for a valid array ) and return
-     * whatever was used as an operator to check. This is useuful for checking
+     * whatever was used as an operator to check. This is useful for checking
      * whether you wanted an inner LIKE or BETWEEN clause for example.
      * @method extractWhereClause
      * @protected
@@ -1082,6 +1127,7 @@ class Builder {
         if (!is_array($type)) {
             return '';
         }
+
         if ($and) {
             switch ($type[1]) {
                 case 'between': return $this->between($type[0], $type[2], $type[3], true);
