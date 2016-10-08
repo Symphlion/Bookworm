@@ -2,8 +2,8 @@
 
 namespace Bookworm;
 
-use Bookworm\Lexicon;
-use Bookworm\Utilities;
+use \Bookworm\Lexicon;
+use \Bookworm\Utilities;
 
 class Builder {
 
@@ -399,11 +399,10 @@ class Builder {
                     . ' ' . $second_where . ')';
         } else {
 
-            $equals = (in_array($equals, \Bookworm\Lexicon::$allowed['equality'])) ? $equals : \Bookworm\Lexicon::$allowed['equality']['default'];
-
+            $equals = Lexicon::validate($equals, 'equality');
             $where_clause = $this->splitwrap($field) . ' ' . $equals . ' '
                     . $this->createBinding($value);
-
+            
             if ($return) {
                 return $where_clause;
             }
