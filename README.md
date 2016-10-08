@@ -6,9 +6,8 @@ A small use case:
 
 ```php
 
-// register your database driver and name it
-
-\Bookworm\Driver::registerConnection('default', [
+// register your database to the pool and name it
+\Bookworm\Pool::registerConnection('default', [
     'port' => 3306,
     'driver' => 'mysql',
     'host' => 'localhost',
@@ -26,12 +25,12 @@ class User extends Model {
 }
 
 // if however, you want to name the table yourself, you can do so like this
-class Users extends Model {
+class MyLovelyPeople extends Model {
     protected $table = "my_users";
 }
 
 // to use it, simply get a model by it`s primary ID
-$user = User::find(1);
+$user = MyLovelyPeople::find(1);
 
 // or alternatively
 $fred = User::where("username", "=", "fred")->get();
