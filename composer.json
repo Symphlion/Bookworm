@@ -1,5 +1,5 @@
 {
-    "name": "Symphlion/Bookworm",
+    "name": "symphlion/bookworm",
     "type": "library",
     "description": "A small ORM library written in PHP",
     "keywords": [
