@@ -17,6 +17,7 @@
         }
     ],
     "require": {
+        "icanboogie/inflector" : "1.*",
         "php" : "~5.6|~7.0"
     },
     "autoload": {
