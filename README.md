@@ -7,7 +7,7 @@ A small use case:
 ```php
 
 // register your database to the pool and name it
-\Bookworm\Pool::registerConnection('default', [
+\Bookworm\Pool::createConnection('default', [
     'port' => 3306,
     'driver' => 'mysql',
     'host' => 'localhost',

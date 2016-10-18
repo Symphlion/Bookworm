@@ -14,7 +14,7 @@ class Model extends Relation {
     /**
      * @var \Bookworm\Table
      */
-    protected $_table = null;
+    protected $_table_id = null;
 
     /**
      * @var array
@@ -42,23 +42,27 @@ class Model extends Relation {
         $classname = get_called_class();
 
         if ($this->table !== null) {
-            $this->_table = new \Bookworm\Table($this->table);
+            $this->_tabldee_id = \Bookworm\Pool::createTable(new \Bookworm\Table( $this->table ));
         } else {
-            $this->_table = new \Bookworm\Table($classname);
-            $this->table = $this->_table->getTableName();
+            $this->_tabldee_id = \Bookworm\Pool::createTable(new \Bookworm\Table( $classname ));
+            $this->table = \Bookworm\Pool::getTable( $this->_tablde_id )->getTableName();
         }
 
         if ($this->primaryfield !== null) {
-            $this->_table->setPrimaryField($this->primaryfield);
+            \Bookworm\Pool::getTable( $this->_table_id )->setPrimaryField($this->primaryfield);
         }
 
         // if this was a new object, we`re going to try and do an insert.
         if ($is_new_object) {
             $this->_is_new_object = $is_new_object;
-            Queries::get($this->_query_id, $copy_builder)->insert($this->_table->getTablename());
+            Pool::getQuery($this->_query_id, $copy_builder)->insert(
+                    \Bookworm\Pool::getTable( $this->_table_id )->getTablename()
+            );
         } else {
             // the initial select query as we`re most likely going to retrieve data
-            Queries::get($this->_query_id, $copy_builder)->select('*')->from($this->_table->getTableName());
+            Pool::getQuery($this->_query_id, $copy_builder)->select('*')->from(
+                    \Bookworm\Pool::getTable( $this->_table_id )->getTableName()
+            );
         }
     }
 
@@ -90,7 +94,7 @@ class Model extends Relation {
                 
                 $result = $driver
                         ->query($query)
-                        ->bindAssocArray(Queries::get($this->_query_id)->getBindings())
+                        ->bindAssocArray(Pool::getQuery($this->_query_id)->getBindings())
                         ->execute();
 
                 if ($is_new_object) {
@@ -150,8 +154,8 @@ class Model extends Relation {
      * @return {bool}
      */
     protected function createInsertQuery() {
-        $builder = Queries::get($this->_query_id)
-                ->insert($this->_table->getTableName());
+        $builder = Pool::getQuery($this->_query_id)
+                ->insert(\Bookworm\Pool::getTable( $this->_table_id )->getTableName());
 
 
         $set = [];
@@ -161,7 +165,7 @@ class Model extends Relation {
             $skip = false;
             // check if the field is our primary key
             if (\Bookworm\Utilities::hasFlag($field['flags'], 'primary_key')) {
-                $this->_table->setPrimaryField($field['name']);
+                \Bookworm\Pool::getTable( $this->_table_id )->setPrimaryField($field['name']);
                 continue;
             }
             // check if the field requires a value to be set
@@ -199,10 +203,10 @@ class Model extends Relation {
      */
     protected function createUpdateQuery() {
 
-        $builder = Queries::get($this->_query_id)
+        $builder = Pool::getQuery($this->_query_id)
                 ->reset()
-                ->update($this->_table->getTableName())
-                ->where($this->_table->getPrimaryField(), '=', $this->getId());
+                ->update(\Bookworm\Pool::getTable( $this->_table_id )->getTableName())
+                ->where(\Bookworm\Pool::getTable( $this->_table_id )->getPrimaryField(), '=', $this->getId());
 
         foreach ($this->getFields() as $field) {
 
@@ -285,8 +289,14 @@ class Model extends Relation {
         return $this->_id;
     }
 
+    /**
+     * @brief a helper to retrieve the active table for this model.
+     * @method getTable
+     * @public
+     * @return \Bookworm\Table
+     */
     public function getTable(){
-        return $this->_table;
+        return \Bookworm\Pool::getTable( $this->_table_id );
     }
     
     /**
@@ -364,8 +374,8 @@ class Model extends Relation {
         if (!$this->_has_merge) {
             $this->_has_merge = true;
             if (is_array($data)) {
-                if (isset($data[$this->_table->getPrimaryField()])) {
-                    $this->_id = $data[$this->_table->getPrimaryField()];
+                if (isset($data[\Bookworm\Pool::getTable( $this->_table_id )->getPrimaryField()])) {
+                    $this->_id = $data[\Bookworm\Pool::getTable( $this->_table_id )->getPrimaryField()];
                 } else {
                     // naively assume the ID will be "id" 
                     if (isset($data['id'])) {
@@ -390,8 +400,8 @@ class Model extends Relation {
         if (!$this->_has_merge) {
             $this->_has_merge = true;
             if (is_object($obj)) {
-                if ($obj->{$this->_table->getPrimaryField()}) {
-                    $this->_id = $obj->{$this->_table->getPrimaryField()};
+                if ($obj->{\Bookworm\Pool::getTable( $this->_table_id )->getPrimaryField()}) {
+                    $this->_id = $obj->{\Bookworm\Pool::getTable( $this->_table_id )->getPrimaryField()};
                 } else {
                     // naively assume the ID will be "id" 
                     if ($obj->id) {

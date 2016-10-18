@@ -3,6 +3,7 @@
 namespace Bookworm;
 
 use Bookworm\Lexicon;
+use Bookworm\Pool;
 
 class Query {
 
@@ -57,7 +58,7 @@ class Query {
      * @public
      */
     public function __construct(){
-        $this->_query_id = \Bookworm\Queries::create();
+        $this->_query_id = \Bookworm\Pool::createQuery();
         $this->_unique_id = \Bookworm\Utilities::hash(8, '');
     }
     
@@ -118,7 +119,7 @@ class Query {
         if (is_array($by) && count($by) == 2) {
             return $this->limit($by[0], $by[1]);
         } else {
-            Queries::get($this->_query_id)->limit($by, $page, $abs);
+            Pool::getQuery($this->_query_id)->limit($by, $page, $abs);
         }
         return $this;
     }
@@ -134,16 +135,16 @@ class Query {
      * @return \Bookworm\Collection | \Bookworm\Model 
      */
     protected function _get() {
-        $limit = Queries::get($this->_query_id)->getLimit();
+        $limit = Pool::getQuery($this->_query_id)->getLimit();
         // put the query building in process
-        $query = Queries::get($this->_query_id)->get();
+        $query = Pool::getQuery($this->_query_id)->get();
         // get the aproriate driver for retrieving our query data
         $driver = \Bookworm\Pool::getConnection($this->getConnection());
         // capture the results
         try {
             $results = $driver
                 ->query( $query )
-                ->bindAssocArray( Queries::get($this->_query_id)->getBindings());
+                ->bindAssocArray( Pool::getQuery($this->_query_id)->getBindings());
         } catch (Exception $ex) {
             $this->_errors[] = $ex->getMessage();
             $this->_errors[] = "We could not bind the parameters to the query. ";
@@ -153,7 +154,10 @@ class Query {
         if ( ( $limit && $limit > 1) or $limit === null ) {
             $collection = new \Bookworm\Collection();
             $data = $results->all(\PDO::FETCH_ASSOC);
-            $collection->addByArray($data, $this->_table->getClassname());
+            $collection->addByArray(
+                    $data, 
+                    Table::r($this->_table_id)->getClassname()
+            );
             $collection->posthook();
             return $collection;
         }
@@ -176,9 +180,9 @@ class Query {
      */
     protected function _find($id) {
         
-        Queries::get($this->_query_id)
+        Pool::getQuery($this->_query_id)
             ->select('*')
-            ->where($this->_table->getPrimaryField(), '=', $id)
+            ->where(Table::r($this->_table_id)->getPrimaryField(), '=', $id)
             ->limit(1);
         return $this->_get();
     }
@@ -203,7 +207,7 @@ class Query {
      * @return \Bookworm\Model
      */
     protected function _first(){
-        Queries::get( $this->_query_id )
+        Pool::getQuery( $this->_query_id )
                 ->limit(1);
         return $this->_get();
     }
@@ -227,18 +231,18 @@ class Query {
         if( is_string($operator)){
             switch($operator){
                 case 'like':
-                    Queries::get($this->_query_id)->like($field, $argument, $optional); break;
+                    Pool::getQuery($this->_query_id)->like($field, $argument, $optional); break;
                 case 'notlike': case 'not like':
-                    Queries::get($this->_query_id)->notlike($field, $argument, $optional); break;
+                    Pool::getQuery($this->_query_id)->notlike($field, $argument, $optional); break;
                 case 'between':
-                    Queries::get($this->_query_id)->between($field, $argument, $optional); break;
+                    Pool::getQuery($this->_query_id)->between($field, $argument, $optional); break;
                 case 'notbetween': case 'not between':
-                    Queries::get($this->_query_id)->notBetween($field, $argument, $optional); break;
+                    Pool::getQuery($this->_query_id)->notBetween($field, $argument, $optional); break;
                 default:
-                    Queries::get($this->_query_id)->where($field, $operator, $argument); break;
+                    Pool::getQuery($this->_query_id)->where($field, $operator, $argument); break;
             }
         } else {
-            Queries::get($this->_query_id)->where($field, $operator, $argument);
+            Pool::getQuery($this->_query_id)->where($field, $operator, $argument);
         }
         return $this;
     }
@@ -250,7 +254,7 @@ class Query {
      * @param string $argument
      */
     protected function _orwhere($field, $operator, $argument) {
-        Queries::get($this->_query_id)->orwhere($field, $operator, $argument);
+        Pool::getQuery($this->_query_id)->orwhere($field, $operator, $argument);
         return $this;
     }
     

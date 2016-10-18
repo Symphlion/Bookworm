@@ -33,10 +33,14 @@ class Table {
     protected $classname = null;
     
     public function __construct( $classname = null, $language = 'en' ){
-        if( null !== $classname ){
+        if( $classname !== null ){
             $this->table_name = Table::resolveInflectedTablename( $classname );
         }
         $this->classname = $classname;
+        
+        if( $language === null ){
+            $language = 'en';
+        }
         $this->language = $language;
     }
     
@@ -135,5 +139,8 @@ class Table {
         $args = explode( "\\", $namespaceClass );
         return strtolower(end($args));
     }
-    
+ 
+    public static function r( $id ){
+        return \Bookworm\Pool::getTable( $id );
+    }
 }

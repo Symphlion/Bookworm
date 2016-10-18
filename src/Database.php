@@ -2,9 +2,11 @@
 
 namespace Bookworm;
 
+use \Bookworm\Interfaces\DatabaseInterface;
 use \PDO as PDO;
 
-class Database {
+
+class Database implements DatabaseInterface {
 
     /**
      * @var string
@@ -87,12 +89,13 @@ class Database {
     }
 
     /**
-     * Prepare a query for usage on the database.
-     * 
+     * @brief prepare the given query for the database. It will load it up and get
+     * the prepared statements ready.
      * @method query
-     * @param {param} $query
-     * @return {Database} self
-     * @throws Exception
+     * @public
+     * @param   string                  $query
+     * @return  \Bookworm\Database
+     * @throws \Exception
      */
     public function query($query) {
         if (!$this->connected()) {
@@ -109,13 +112,13 @@ class Database {
     /**
      * Binding a value / parameter to the statement based on the input query given.
      * @method bind
-     * @param {string} $key
-     * @param {mixed} $val
-     * @param {int} $datatype does automatic sorting on value if not specified
-     * @param {string} $type
-     * @return \Bookworm\Database
+     * @param   string      $key
+     * @param   mixed       $value
+     * @param   int         $datatype
+     * @param   string      $bindtype - switch between value or param
+     * @return  \Bookworm\Database
      */
-    public function bind($key, $val, $datatype = null, $type = 'value') {
+    public function bind( string $key, string $value, $datatype = null, $bindtype = 'value') {
         if (!isset($this->statements[$this->index])) {
             throw new \Exception("No prepared statement to bind on.");
         }
@@ -124,14 +127,14 @@ class Database {
             $key = ':' . $key;
         }
         if (!$datatype) {
-            $datatype = $this->_getDatatype($val);
+            $datatype = $this->_getDatatype($value);
         }
-        switch ($type) {
+        switch ($bindtype) {
             case 'value':
-                $this->statements[$this->index]->bindValue($key, $val, $datatype);
+                $this->statements[$this->index]->bindValue($key, $value, $datatype);
                 break;
             case 'param':
-                $this->statements[$this->index]->bindParam($key, $val, $datatype);
+                $this->statements[$this->index]->bindParam($key, $value, $datatype);
                 break;
         }
         return $this;
@@ -322,7 +325,7 @@ class Database {
      */
     public function connect($username, $password) {
         try {
-            $this->close();
+            $this->disconnect();
             $options = array(
                 PDO::ATTR_PERSISTENT => true,
                 PDO::ATTR_EMULATE_PREPARES => false,
@@ -343,7 +346,7 @@ class Database {
      * @public
      * @return {Database} self
      */
-    public function close() {
+    public function disconnect() {
         $this->pdo = null;
         return $this;
     }
@@ -432,4 +435,24 @@ class Database {
     public function getErrors(){
         return $this->errors;
     }
+
+    /**
+     * @brief add a error message.
+     * @method error
+     * @public
+     * @param string    $key
+     * @param string    $msg
+     * @return \Bookworm\Database
+     */
+    public function error($key, $msg = null ) {
+        
+        if( $msg === null ){
+            $msg = $key;
+            $key = count($this->errors);
+        }
+        
+        $this->errors[$key] = $msg;
+        return $this;
+    }
+
 }
