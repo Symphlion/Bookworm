@@ -22,7 +22,7 @@ interface DatabaseInterface {
      * @public
      * @return \Bookworm\Collection
      */
-    public function all();
+    public function all( $as );
     
     /**
      * @brief this function should return the first dataset it found within the
@@ -31,15 +31,17 @@ interface DatabaseInterface {
      * @public
      * @return \Bookworm\Model
      */
-    public function first();
+    public function first( $as );
     
     /**
      * @brief the default action to start up the connection. 
      * @method connect
      * @public
+     * @param   string  $username
+     * @param   string  $password
      * @return \Bookworm\Interfaces\DatabaseInterface
      */
-    public function connect();
+    public function connect( $username, $password );
     
     /**
      * @brief a method to check if there is a working connection to begin with.
@@ -67,10 +69,12 @@ interface DatabaseInterface {
     public function getErrors();
     
     /**
-     * @brief store a error message.
+     * @brief store a error message. If the $msg is empty or null, $key will become
+     * $msg.
      * @method error
      * @public
+     * @param   string $key
      * @param   string $msg
      */
-    public function error( $msg );
+    public function error( $key, $msg = null );
 }
