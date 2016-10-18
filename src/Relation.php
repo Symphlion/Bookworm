@@ -2,6 +2,9 @@
 
 namespace Bookworm;
 
+use \Bookworm\Pool;
+
+
 class Relation extends Query {
 
     /**
@@ -28,7 +31,7 @@ class Relation extends Query {
         }
         
         if ($foreign_key === null) {
-            $foreign_key = strtolower($this->_table_obj->getSingular()) . '_id';
+            $foreign_key = strtolower(Pool::getTable( $this->_table_id )->getSingular()) . '_id';
         }
 
         return $relation->setRelation($this)->where($foreign_key, '=', $this->getId())->first();
@@ -51,7 +54,7 @@ class Relation extends Query {
         }
         
         if ($related_own_key === null) {
-            $related_own_key = $relation->_table_obj->getSingular() . '_id';
+            $related_own_key = Pool::getTable($relation->_table_id)->getSingular() . '_id';
         }
         return $relation->setRelation($this)->where('id', '=', $this->$related_own_key)->first();
     }
@@ -75,7 +78,7 @@ class Relation extends Query {
             return null;
         }
         if ($foreign_key === null) {
-            $foreign_key = strtolower($this->_table_obj->getSingular()) . '_id';
+            $foreign_key = strtolower( Pool::getTable( $this->_table_id)->getSingular()) . '_id';
         }
         
         
