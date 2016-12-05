@@ -91,6 +91,18 @@ class Table {
     }
     
     /**
+     * @brief a way to set up the classname if the classname is different
+     * from the table`s name, we still need to be able to invoke the right
+     * model.
+     * @method setClassname
+     * @public
+     * @param string $classname
+     */
+    public function setClassname( $classname ){
+        $this->classname = $classname;
+    }
+    
+    /**
      * @brief returns the classname used to establish the tablename.
      * @method getClassname
      * @public

@@ -44,6 +44,7 @@ class Model extends Relation {
 
         if ($this->table !== null) {
             $this->_table_id = Pool::createTable(new \Bookworm\Table( $this->table ));
+            Pool::getTable( $this->_table_id )->setClassname( $classname );
         } else {
             $this->_table_id = Pool::createTable(new \Bookworm\Table( $classname ));
             $this->table = Pool::getTable( $this->_table_id )->getTableName();
