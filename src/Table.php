@@ -34,7 +34,8 @@ class Table {
     
     public function __construct( $classname = null, $language = 'en' ){
         if( $classname !== null ){
-            $this->table_name = Table::resolveInflectedTablename( $classname );
+            $this->table_name = $classname;
+            // $this->table_name = Table::resolveInflectedTablename( $classname );
         }
         $this->classname = $classname;
         
