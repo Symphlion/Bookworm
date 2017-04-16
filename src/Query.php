@@ -313,7 +313,7 @@ class Query {
     public static function setFields($class) {
         $object = new $class(true, false);
         $query =  \Bookworm\Lexicon::key('select') . ' * ';
-        $query .= \Bookworm\Lexicon::key('from') . '  ' . $object->_table->getTablename() . ' ';
+        $query .= \Bookworm\Lexicon::key('from') . '  ' . $object->getTable()->getTablename() . ' ';
         $query .= \Bookworm\Lexicon::key('limit') . ' 0';
 
         $stmt = \Bookworm\Pool::getConnection( $object->getConnection())->query($query)->getStatement();
