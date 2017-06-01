@@ -12,7 +12,7 @@ interface DatabaseInterface {
     
     public function query( $query );
     
-    public function bind(  string $key, string $value, $datatype = null, $bindtype = 'value' );
+    public function bind( $key, $value, $datatype = null, $bindtype = 'value');
  
     /**
      * @brief this method should return all the dataset it found, although you could

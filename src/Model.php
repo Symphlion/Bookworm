@@ -88,6 +88,7 @@ class Model extends Relation {
         if ($this->isNewRow()) {
             $is_new_object = true;
             $query = $this->createInsertQuery();
+            
         }
 
         if ($query) {
@@ -96,7 +97,7 @@ class Model extends Relation {
                 
                 $result = $driver
                         ->query($query)
-                        ->bindAssocArray(Pool::getQuery($this->_query_id)->getBindings())
+                        ->bindAssocArray(Pool::getQuery($this->_query_id)->getBindings(), Pool::getQuery($this->_query_id)->getBindingTypes())
                         ->execute();
 
                 if ($is_new_object) {
@@ -118,6 +119,100 @@ class Model extends Relation {
         }
         return false;
     }
+    
+    /**
+     * @brief Update an existing row in the database. Iterate over the fields 
+     * we have and store it .
+     * @method _update
+     * @protected
+     * @return {bool}
+     */
+    protected function createInsertQuery() {
+        $builder = Pool::getQuery($this->_query_id)
+                ->insert(Pool::getTable( $this->_table_id )->getTableName());
+
+
+        $set = [];
+        $bindTypes = [];
+        
+        foreach ($this->getFields() as $field) {
+            $is_required = false;
+            
+            // check if the field is our primary key
+            if (\Bookworm\Utilities::hasFlag($field['flags'], 'primary_key')) {
+                Pool::getTable( $this->_table_id )->setPrimaryField($field['name']);
+                continue;
+            }
+            // check if the field requires a value to be set
+            else if (\Bookworm\Utilities::hasFlag($field['flags'], 'not_null')) {
+                $is_required = true;
+            }
+
+            $val = $this->getAttributeValue($field, $is_required);
+            $type = \Bookworm\Utilities::getParamType($field['type']);
+            
+            if ($val !== null) {
+                
+                // $fields[] = $field['name'];
+                $set[$field['name']] = $val;
+                $bindTypes[$field['name']] = $type;
+                
+            } else {
+                if ((empty($val) or ( !$val && $val !== false)) && $is_required) {
+                    // we have an error.. we need that field!
+                    $this->_errors[] = 'Required field `' . $field['name'] . '` is empty. The type is ' . $field['type'] . '.';
+                }
+            }
+        }
+        
+        if (count($set) > 0 && !$this->hasErrors()) {
+            return $builder
+                            ->fieldnames(array_keys($set))
+                            ->values($set, $bindTypes)
+                            ->get();
+        }
+        return false;
+    }
+
+    /**
+     * @brief Update an existing row in the database. Iterate over the fields 
+     * we have and store it.
+     * @method update
+     * @protected
+     * @return string
+     */
+    protected function createUpdateQuery() {
+        
+        $builder = Pool::getQuery($this->_query_id)
+                ->reset()
+                ->update(Pool::getTable( $this->_table_id )->getTableName())
+                ->where(Pool::getTable( $this->_table_id )->getPrimaryField(), '=', $this->getId());
+
+        
+        foreach ($this->getFields() as $field) {
+
+            if (\Bookworm\Utilities::hasFlag($field['flags'], 'primary_key')) {
+                $val = null;
+            } else if ($field['name'] == 'updated_at') {
+                $val = null;
+            } else if ($field['name'] == 'created_at') {
+                $val = null;
+            } else if (isset($this->_stored_attributes[$field['name']]) && $this->_stored_attributes[$field['name']] == $this->_modified_attributes[$field['name']]) {
+                $val = null;
+            } else if ($this->_modified_attributes[$field['name']] == null) {
+                $val = null;
+            } else {
+                $val = $this->_modified_attributes[$field['name']];
+            }
+
+            if ($val !== null) {
+                $builder->set($field['name'], $val);
+            }
+        }
+
+        return $builder->get();
+    }
+
     
     /**
      * @brief revert the modified data back to the original data and update ( or
@@ -149,91 +244,47 @@ class Model extends Relation {
     }
     
     /**
-     * @brief Update an existing row in the database. Iterate over the fields 
-     * we have and store it .
-     * @method _update
-     * @protected
-     * @return {bool}
+     * @brief call the _ functions of which we can access publicly. 
+     * @method __call
+     * @public
+     * @param string $name
+     * @param array|mixed $arguments
+     * @return \Bookworm\Query
      */
-    protected function createInsertQuery() {
-        $builder = Pool::getQuery($this->_query_id)
-                ->insert(Pool::getTable( $this->_table_id )->getTableName());
-
-
-        $set = [];
-
-        foreach ($this->getFields() as $field) {
-            $is_required = false;
-            $skip = false;
-            // check if the field is our primary key
-            if (\Bookworm\Utilities::hasFlag($field['flags'], 'primary_key')) {
-                Pool::getTable( $this->_table_id )->setPrimaryField($field['name']);
-                continue;
+    public function __call($name, $arguments) {
+        
+        if (in_array(strtolower($name), self::$_query_methods[1])) {
+            return call_user_func_array(array($this, '_' . $name), $arguments);
+        } else {
+            
+            // @todo: add logic to return dynamic calls bound to fields for this row
+            
+            if( isset($this->_modified_attributes[$name])){
+                return  $this->_modified_attributes[$name];
             }
-            // check if the field requires a value to be set
-            else if (\Bookworm\Utilities::hasFlag($field['flags'], 'not_null')) {
-                $is_required = true;
-            }
-
-            $val = $this->getAttributeValue($field, $is_required);
-
-            if ($val !== null) {
-                // $fields[] = $field['name'];
-                $set[$field['name']] = $val;
-            } else {
-                if ((empty($val) or ( !$val && $val !== false)) && $is_required) {
-                    // we have an error.. we need that field!
-                    $this->_errors[] = 'Required field `' . $field['name'] . '` is empty. The type is ' . $field['type'] . '.';
-                }
-            }
+            
+            throw new \Exception('A dynamic method has been called, but no implementation was found. The method called: <b>' . __CLASS__ . '::' . $name . '()</b> on line ' . __LINE__, __LINE__);
         }
-        if (count($set) > 0 && !$this->hasErrors()) {
-            return $builder
-                            ->fieldnames(array_keys($set))
-                            ->values($set)
-                            ->get();
-        }
-        return false;
     }
 
     /**
-     * @brief Update an existing row in the database. Iterate over the fields 
-     * we have and store it.
-     * @method update
-     * @protected
-     * @return string
+     * @brief the __calLStatic is an abstraction to allow certain methods to be called
+     * static as well as normal. 
+     * @param string $name
+     * @param array|mixed  $arguments
+     * @return \Bookworm\Query
      */
-    protected function createUpdateQuery() {
-
-        $builder = Pool::getQuery($this->_query_id)
-                ->reset()
-                ->update(Pool::getTable( $this->_table_id )->getTableName())
-                ->where(Pool::getTable( $this->_table_id )->getPrimaryField(), '=', $this->getId());
-
-        foreach ($this->getFields() as $field) {
-
-            if (\Bookworm\Utilities::hasFlag($field['flags'], 'primary_key')) {
-                $val = null;
-            } else if ($field['name'] == 'updated_at') {
-                $val = null;
-            } else if ($field['name'] == 'created_at') {
-                $val = null;
-            } else if (isset($this->_stored_attributes[$field['name']]) && $this->_stored_attributes[$field['name']] == $this->_modified_attributes[$field['name']]) {
-                $val = null;
-            } else if ($this->_modified_attributes[$field['name']] == null) {
-                $val = null;
-            } else {
-                $val = $this->_modified_attributes[$field['name']];
-            }
-
-            if ($val !== null) {
-                $builder->set($field['name'], $val);
-            }
+    public static function __callStatic($name, $arguments) {
+        if (in_array($name, self::$_query_methods[0])) {
+            $classname = get_called_class();
+            
+            $obj = new $classname( false );
+            // $obj->setClassname($classname);
+            
+            return call_user_func_array(array($obj, '_' . $name), $arguments);
         }
-
-        return $builder->get();
     }
-
+    
     /**
      * @brief returns the value for a given attirbute field as defined by the database
      * table schema. 
@@ -395,7 +446,7 @@ class Model extends Relation {
      * @brief merge the data fields from storage with the attributes object
      * @method mergeAtributes
      * @public
-     * @param Object $data
+     * @param Object $obj
      * @return \Bookworm\Model
      */
     public function mergeAttributesFromObject($obj) {

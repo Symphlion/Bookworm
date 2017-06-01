@@ -20,6 +20,12 @@ class Builder {
     protected $bindings = [];
 
     /**
+     * @property All the bounded properties and associated types
+     * @var array
+     */
+    protected $bindingTypes = [];
+
+    /**
      * @property a flag to see if we called either select/update/delete/insert
      * @var bool
      */
@@ -299,12 +305,19 @@ class Builder {
      * @method values
      * @public
      * @param array $fields
+     * @param array $types - optional
      */
-    public function values($fields) {
+    public function values($fields, $types = null) {
         if (is_array($fields)) {
             $binds = [];
-            foreach ($fields as $value) {
-                $binds[] = $this->createBinding($value);
+            if ($types !== null) {
+                foreach ($fields as $k => $value) {
+                    $binds[] = $this->createBinding($value, $types[$k]);
+                }
+            } else {
+                foreach ($fields as $value) {
+                    $binds[] = $this->createBinding($value);
+                }
             }
             $this->clauses['values'][] = ' (' . implode(', ', $binds) . ') ';
         }
@@ -402,7 +415,7 @@ class Builder {
             $equals = Lexicon::validate($equals, 'equality');
             $where_clause = $this->splitwrap($field) . ' ' . $equals . ' '
                     . $this->createBinding($value);
-            
+
             if ($return) {
                 return $where_clause;
             }
@@ -776,6 +789,19 @@ class Builder {
     }
 
     /**
+     * @brief returns all the binding fields' types.
+     * @method getBindingTypes
+     * @public
+     * @return array
+     */
+    public function getBindingTypes() {
+        if (count($this->bindingTypes) > 0) {
+            return $this->bindingTypes;
+        }
+        return null;
+    }
+
+    /**
      * @brief if the last query this builder created had a limit clause, we return
      * the limit as defined by the limit() method. 
      * @method getLimit
@@ -1047,14 +1073,18 @@ class Builder {
      * @method createBinding
      * @protected
      * @param mixed $value
+     * @param mixed $type - optional
      * @return string
      */
-    protected function createBinding($value) {
+    protected function createBinding($value, $type = null) {
         if (is_array($value)) {
             return '(' . implode(',', $value) . ')';
         }
         $hash = \Bookworm\Utilities::hash();
         $this->bindings[$hash] = $value;
+        if ($type !== null) {
+            $this->bindingTypes[$hash] = $type;
+        }
         return $hash;
     }
 

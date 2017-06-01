@@ -301,7 +301,22 @@ class Query {
     public function hasErrors() {
         return count($this->_errors) > 0;
     }
-
+    
+    /**
+     * @brief Returns the field data for each column on the table. 
+     * @method getFields
+     * @public
+     * @static
+     * @param string $field_data
+     */
+    public static function getFields() {
+        $class = get_called_class();
+        if (!isset(self::$_field_information[$class])) {
+            self::setFields($class);
+        }
+        return self::$_field_information[$class];
+    } 
+    
     /**
      * @brief set up the fields for this table in the database, retrieves it, 
      * and stores it on the static storage.
@@ -311,6 +326,7 @@ class Query {
      * @param {string} $class
      */
     public static function setFields($class) {
+        
         $object = new $class(true, false);
         $query =  \Bookworm\Lexicon::key('select') . ' * ';
         $query .= \Bookworm\Lexicon::key('from') . '  ' . $object->getTable()->getTablename() . ' ';
@@ -333,53 +349,6 @@ class Query {
         }
         self::$_field_information[$class] = $columns;
     }
+
     
-    /**
-     * @brief Returns the field data for each column on the table. 
-     * @method getFields
-     * @public
-     * @static
-     * @param string $field_data
-     */
-    public static function getFields() {
-        $class = get_called_class();
-        if (!isset(self::$_field_information[$class])) {
-            self::setFields($class);
-        }
-        return self::$_field_information[$class];
-    } 
-
-    /**
-     * @brief call the _ functions of which we can access publicly. 
-     * @method __call
-     * @public
-     * @param string $name
-     * @param array|mixed $arguments
-     * @return \Bookworm\Query
-     */
-    public function __call($name, $arguments) {
-        if (in_array($name, self::$_query_methods[1])) {
-            return call_user_func_array(array($this, '_' . $name), $arguments);
-        } else {
-            throw new \Exception('A dynamic method has been called, but no implementation was found. The method called: <b>' . __CLASS__ . '::' . $name . '()</b> on line ' . __LINE__, __LINE__);
-        }
-    }
-
-    /**
-     * @brief the __calLStatic is an abstraction to allow certain methods to be called
-     * static as well as normal. 
-     * @param string $name
-     * @param array|mixed  $arguments
-     * @return \Bookworm\Query
-     */
-    public static function __callStatic($name, $arguments) {
-        if (in_array($name, self::$_query_methods[0])) {
-            $classname = get_called_class();
-            
-            $obj = new $classname( false );
-            // $obj->setClassname($classname);
-            
-            return call_user_func_array(array($obj, '_' . $name), $arguments);
-        }
-    }
 }

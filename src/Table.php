@@ -43,6 +43,12 @@ class Table {
             $language = 'en';
         }
         $this->language = $language;
+        
+        // override the primary field for this table as apparently, you can be a
+        // dick, and leave it as an empty string.
+        if( strlen( $this->primary_field) == 0 or $this->primary_field == null ){
+            $this->primary_field = 'id';
+        }
     }
     
     /**

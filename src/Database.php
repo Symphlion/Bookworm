@@ -2,9 +2,8 @@
 
 namespace Bookworm;
 
-use \Bookworm\Interfaces\DatabaseInterface;
+use Bookworm\Interfaces\DatabaseInterface;
 use \PDO as PDO;
-
 
 class Database implements DatabaseInterface {
 
@@ -52,7 +51,7 @@ class Database implements DatabaseInterface {
      * @var array
      */
     private $errors = [];
-    
+
     /**
      * Create a new database instance and connect the database up to the given
      * settings ( if provided )
@@ -61,7 +60,7 @@ class Database implements DatabaseInterface {
      * @param {array} $config
      * @return {Database} 
      */
-    public function __construct(array $config = array()) {
+    public function __construct(array $config = []) {
         if (count($config) > 0) {
             $this->applySettings($config);
         }
@@ -118,7 +117,7 @@ class Database implements DatabaseInterface {
      * @param   string      $bindtype - switch between value or param
      * @return  \Bookworm\Database
      */
-    public function bind( string $key, string $value, $datatype = null, $bindtype = 'value') {
+    public function bind($key, $value, $datatype = null, $bindtype = 'value') {
         if (!isset($this->statements[$this->index])) {
             throw new \Exception("No prepared statement to bind on.");
         }
@@ -173,9 +172,16 @@ class Database implements DatabaseInterface {
      * @param {array} $binds
      * @return {Database}
      */
-    public function bindAssocArray($binds) {
-        foreach ($binds as $bind => $val) {
-            $this->bind($bind, $val);
+    public function bindAssocArray($binds, $types = null) {
+
+        if ($types !== null) {
+            foreach ($binds as $bind => $val) {
+                $this->bind($bind, $val, $types[$bind]);
+            }
+        } else {
+            foreach ($binds as $bind => $val) {
+                $this->bind($bind, $val);
+            }
         }
         return $this;
     }
@@ -422,17 +428,17 @@ class Database implements DatabaseInterface {
      * @public
      * @return bool
      */
-    public function hasErrors(){
+    public function hasErrors() {
         return count($this->errors) > 0;
     }
-    
+
     /**
      * @brief returns all the errors the database encountered.
      * @method getErrors
      * @public
      * @return array
      */
-    public function getErrors(){
+    public function getErrors() {
         return $this->errors;
     }
 
@@ -444,13 +450,13 @@ class Database implements DatabaseInterface {
      * @param string    $msg
      * @return \Bookworm\Database
      */
-    public function error($key, $msg = null ) {
-        
-        if( $msg === null ){
+    public function error($key, $msg = null) {
+
+        if ($msg === null) {
             $msg = $key;
             $key = count($this->errors);
         }
-        
+
         $this->errors[$key] = $msg;
         return $this;
     }

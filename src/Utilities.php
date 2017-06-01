@@ -99,4 +99,21 @@ class Utilities {
         }
     }
     
+    /**
+     * @brief returns a default value for any type given. 
+     * @method getDefaultValue
+     * @public
+     * @param string $type
+     * @return mixed
+     */
+    public static function getParamType($type) {
+        switch ($type) {
+            case 'TIMESTAMP': case 'DATE': case 'DATETIME': return \PDO::PARAM_STR;
+            case 'LONG': case 'INT': case 'TINY': case 'MEDIUM': return \PDO::PARAM_INT;
+            case 'DOUBLE': case 'FLOAT': return \PDO::PARAM_STR; 
+            case 'BOOL': case 'BOOLEAN': return \PDO::PARAM_BOOL;
+            case 'VAR_STRING': default: return \PDO::PARAM_STR;
+        }
+    }
+    
 }
